@@ -1,6 +1,42 @@
 import psycopg2
 import os
 
+def update_employee(employee):
+
+    id, name, age, companyId = employee
+        
+    company = ''
+    
+    if companyId:
+        cursor.execute("SELECT name FROM companies WHERE id = %s", [companyId])
+        company = cursor.fetchone()[0]
+        print(f"Name: {name}, Age: {age}, Company: {company}")
+    else:
+        print(f"Name: {name}, Age: {age} Company: None")
+    
+    newName = input("Please enter new employee's name: ")
+    newAge = input("Please enter new employee's age: ")
+    newCompany = input("Please enter new employee's company: ")
+    
+    if newCompany == company:
+        cursor.execute("UPDATE employees SET name = %s, age = %s WHERE id = %s", [newName, newAge, id])
+        connection.commit()
+        print("Employee updated.")
+    else:
+        cursor.execute("SELECT id FROM companies WHERE name = %s", [newCompany])
+        companyId = cursor.fetchone()
+        if companyId:
+            cursor.execute("UPDATE employees SET name = %s, age = %s, company_id = %s WHERE id = %s", [newName, newAge, companyId, id])
+            connection.commit()
+            print("Employee updated.")
+        else:
+            cursor.execute("INSERT INTO companies (name) VALUES (%s) RETURNING id", [newCompany])
+            connection.commit()
+            companyId = cursor.fetchone()[0]
+            cursor.execute("UPDATE employees SET name = %s, age = %s, company_id = %s WHERE id = %s", [newName, newAge, companyId, id])
+            connection.commit()
+            print("Employee updated.")
+        
 while True:
 
     connection = psycopg2.connect(database="crm_python")
@@ -114,46 +150,24 @@ while True:
     elif answer == '7':
         # update one employee
         os.system("clear")
-        name = input("Please enter employee's name.")
+        name = input("Please enter employee's name: ")
         cursor.execute("SELECT * FROM employees WHERE name = %s", [name])
-        employee = cursor.fetchone()
-        if employee:
-            id, name, age, companyId = employee
-            
-            company = ''
-            
-            if companyId:
-                cursor.execute("SELECT name FROM companies WHERE id = %s", [companyId])
-                company = cursor.fetchone()[0]
-                print(f"Name: {name}, Age: {age}, Company: {company}")
-            else:
-                print(f"Name: {name}, Age: {age} Company: None")
-            
-            newName = input("Please enter new employee's name.")
-            newAge = input("Please enter new employee's age.")
-            newCompany = input("Please enter new employee's company.")
-            
-            if newCompany == company:
-                cursor.execute("UPDATE employees SET name = %s, age = %s WHERE id = %s", [newName, newAge, id])
-                connection.commit()
-                print("Employee updated.")
-            else:
-                cursor.execute("SELECT id FROM companies WHERE name = %s", [newCompany])
-                companyId = cursor.fetchone()
-                if companyId:
-                    cursor.execute("UPDATE employees SET name = %s, age = %s, company_id = %s WHERE id = %s", [newName, newAge, companyId, id])
-                    connection.commit()
-                    print("Employee updated.")
-                else:
-                    cursor.execute("INSERT INTO companies (name) VALUES (%s) RETURNING id", [newCompany])
-                    connection.commit()
-                    companyId = cursor.fetchone()[0]
-                    cursor.execute("UPDATE employees SET name = %s, age = %s, company_id = %s WHERE id = %s", [newName, newAge, companyId, id])
-                    connection.commit()
-                    print("Employee updated.")
+        employee = None
+        employees = cursor.fetchall()
+        if len(employees) > 1:
+            for emp in employees:
+                id, name, age, company = emp
+                print(f"Id: {id}, Name: {name}, Age: {age}, Company: {company}")
+            employeeId = input("Please enter the id of the employee you would like to update: ")
+            cursor.execute("SELECT * FROM employees WHERE id = %s", [employeeId])
+            employee = cursor.fetchone()
+            update_employee(employee)
+        elif len(employees) == 1:
+            employee = employees[0]
+            update_employee(employee)
         else:
             print("Employee not found.")
-
+        
     elif answer == '8':
         # update one company
         os.system("clear")

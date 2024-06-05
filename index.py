@@ -12,7 +12,7 @@ def update_employee(employee):
         company = cursor.fetchone()[0]
         print(f"Name: {name}, Age: {age}, Company: {company}")
     else:
-        print(f"Name: {name}, Age: {age} Company: None")
+        print(f"Name: {name}, Age: {age} Company: ")
     
     newName = input("Please enter new employee's name: ")
     newAge = input("Please enter new employee's age: ")
@@ -151,8 +151,7 @@ while True:
         # update one employee
         os.system("clear")
         name = input("Please enter employee's name: ")
-        cursor.execute("SELECT * FROM employees WHERE name = %s", [name])
-        employee = None
+        cursor.execute("SELECT employees.id AS id, employees.name AS name, age, companies.name AS company FROM employees LEFT JOIN companies ON employees.company_id = companies.id WHERE employees.name = %s", [name])
         employees = cursor.fetchall()
         if len(employees) > 1:
             for emp in employees:
@@ -161,7 +160,10 @@ while True:
             employeeId = input("Please enter the id of the employee you would like to update: ")
             cursor.execute("SELECT * FROM employees WHERE id = %s", [employeeId])
             employee = cursor.fetchone()
-            update_employee(employee)
+            if employee:
+                update_employee(employee)
+            else:
+                print("Employee not found.")
         elif len(employees) == 1:
             employee = employees[0]
             update_employee(employee)
